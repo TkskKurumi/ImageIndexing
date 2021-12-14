@@ -1,0 +1,3 @@
+[submodule "saved_kdt"]
+	path = saved_kdt
+	url = https://github.com/TkskKurumi/saved_kdt.git
