@@ -1,5 +1,6 @@
 import os
 from PIL import Image
+from numpy.lib.arraysetops import isin
 from numpy.lib.function_base import _parse_gufunc_signature
 if(os.environ.get("KERAS_BACKEND", None) == 'plaidml'):
     os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"   # nopep8
@@ -14,6 +15,7 @@ import keras.backend as K
 import misc
 import random
 import numpy as np
+from typing import List
 
 
 class ImageSizeCantFit(Exception):
@@ -26,12 +28,13 @@ class Encoder:
         self.model = load_model(h5)
         self.image_size = self.model.get_input_at(0).shape.dims[1]
 
-    def __call__(self, images):
+    def __call__(self, images: List[Image.Image]) -> np.ndarray:
         arrs = []
         for img in images:
             w, h = img.size
             if(w != self.image_size or h != self.image_size):
-                raise ImageSizeCantFit("Image size doesn't fit with encoder input")
+                raise ImageSizeCantFit(
+                    "Image size doesn't fit with encoder input")
             arr = img2arr(img)
             arrs.append(arr)
         arrs = np.array(arrs)
@@ -45,25 +48,23 @@ def img2arr(image):
 
 
 class ImageAugmentation:
-    def __init__(self):
-        pass
+    def __init__(self, n=50):
+        self.n = 50
 
-    def __call__(self, image: Image.Image, image_size=128, n=50):
+    def __call__(self, image: Image.Image, image_size=128, n=None):
+        if(n is None):
+            n = self.n
         w, h = image.size
-        min_size = min(w, h)*0.07
-        ret = []
+        ret = [{'original': True}, image]
         for i in range(n):
             # crop
-            le, ri = misc.random_interval(mingap=min_size, scale=w)
-            size = ri-le
-            up = random.randrange(h-size)
-            lo = up + size
-            img = Image.crop((le, up, ri, lo))
+            box = misc.random_crop_box(w, h)
+            img = Image.crop(box)
 
             # rotate
             rotation = random.choice([-90, 0, 90, 180])+random.random(45)-22.5
             img = img.rotate(rotation, expand=True)
             img = img.resize((image_size, image_size), Image.LANCOS)
-
-            ret.append(img)
+            info = {'box': box, 'rotation': rotation, 'original': False}
+            ret.append([info, img])
         return ret
