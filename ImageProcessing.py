@@ -68,3 +68,4 @@ class ImageAugmentation:
             info = {'box': box, 'rotation': rotation, 'original': False}
             ret.append([info, img])
         return ret
+    

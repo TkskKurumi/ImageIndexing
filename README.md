@@ -1,5 +1,5 @@
 ## notes
-
+### code structures
 + ImageIndexing.py
 + + main
 + augmentation.py
@@ -10,3 +10,12 @@
 + + miscellaneous
 + saved_kdt/
 + + K-Dimension Tree implementation 
+
+### ImageIndexing structures
+
++ KDT for nearest neighbour indexing
+
++ db for dict
++ db: Dict
+  + hashed_vector : dict key, string
+    + 
