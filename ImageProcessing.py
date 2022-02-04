@@ -1,18 +1,11 @@
 import os
 from PIL import Image
-from numpy.lib.arraysetops import isin
-from numpy.lib.function_base import _parse_gufunc_signature
-if(os.environ.get("KERAS_BACKEND", None) == 'plaidml'):
-    os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"   # nopep8
-if("plaidml" in os.environ.get("KERAS_BACKEND", None)):
-    import keras
-
-else:
-    from tensorflow import keras
+os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"   # nopep8
+import keras
 
 from keras.models import load_model
 import keras.backend as K
-import misc
+from . import misc
 import random
 import numpy as np
 from typing import List
@@ -55,17 +48,20 @@ class ImageAugmentation:
         if(n is None):
             n = self.n
         w, h = image.size
-        ret = [{'original': True}, image]
+        ret = [[{'original': True, "w": w, "h": h}, image.resize(
+            (image_size, image_size), Image.LANCZOS)]]
         for i in range(n):
             # crop
             box = misc.random_crop_box(w, h)
-            img = Image.crop(box)
+            img = image.crop(box)
 
             # rotate
-            rotation = random.choice([-90, 0, 90, 180])+random.random(45)-22.5
+            rotation = random.choice([-90, 0, 90, 180])+random.random()*45-22.5
             img = img.rotate(rotation, expand=True)
-            img = img.resize((image_size, image_size), Image.LANCOS)
-            info = {'box': box, 'rotation': rotation, 'original': False}
+            img = img.resize((image_size, image_size), Image.LANCZOS)
+            x0, y0, x1, y1 = box
+
+            info = {'box': box, 'rotation': rotation,
+                    'original': False, 'rel_box': (x0/w, y0/h, x1/w, y1/h)}
             ret.append([info, img])
         return ret
-    
